@@ -7,7 +7,7 @@ from createAndAttachHook import CreateAndAttachHook
 from detechHook import DetachHook
 import torch
 from torch.profiler import profile, ProfilerActivity
-
+from memoryCalculator import MemoryCalculator
 def print_summary(layer_stats):
     print(f"\n{'='*85}")
     print(f"{'Layer':<45} {'Type':<20} {'FLOPs':>10} {'Params':>10}")
@@ -54,10 +54,12 @@ class Evaluator:
             total_flops = sum(event.flops for event in prof.key_averages())
             total_kflops = total_flops / 1000
             logger.info(f"Total  FLOPs: {total_flops:,}", context="Evaluator.evaluate")
+            memory_calculator = MemoryCalculator(model, tokens)
+            memory_calculator.print_memory_summary(layer_stats)
         except Exception as e:
             logger.error(f"Evaluation failed: {str(e)}", context="Evaluator.evaluate")
             raise
 
 if __name__ == "__main__":
     evaluator = Evaluator("gpt2")
-    evaluator.evaluate("Hello, how am I?", INFERENCE)
+    evaluator.evaluate("Hello, how am I doing? I have been doing good. What's going on?", INFERENCE)
