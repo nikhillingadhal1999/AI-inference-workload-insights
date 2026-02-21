@@ -10,6 +10,7 @@
 *.userosscache
 *.sln.docstates
 *.env
+.env
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -416,3 +417,11 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+# ...existing code...
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# ...existing code...
