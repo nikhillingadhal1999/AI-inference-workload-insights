@@ -6,6 +6,7 @@ from config import INFERENCE
 from createAndAttachHook import CreateAndAttachHook
 from detechHook import DetachHook
 import torch
+from torch.profiler import profile, ProfilerActivity
 
 def print_summary(layer_stats):
     print(f"\n{'='*85}")
@@ -38,16 +39,25 @@ class Evaluator:
             logger.info("Evaluation started", context="Evaluator.evaluate")
             hookObj = CreateAndAttachHook(model)
             hooks, layer_stats = hookObj.attach_hooks()
-            with torch.no_grad():
-                outputs = model(**tokens)
+            with profile(
+                activities=[ProfilerActivity.CPU],  # or ProfilerActivity.CUDA for GPU
+                with_flops=True                     # tells profiler to count actual FLOPs
+            ) as prof:
+                with torch.no_grad():
+                    outputs = model(**tokens)
+                    logger.info("Model forward pass completed", context="Evaluator.evaluate")
             detach_hook = DetachHook(hooks)
             detach_hook.detach_hooks()
             logger.info("Evaluation completed", context="Evaluator.evaluate")
             print_summary(layer_stats)
+            # logger.info(prof.key_averages().table(sort_by="cpu_time_total", row_limit=20), context="Evaluator.evaluate")
+            total_flops = sum(event.flops for event in prof.key_averages())
+            total_kflops = total_flops / 1000
+            logger.info(f"Total  FLOPs: {total_flops:,}", context="Evaluator.evaluate")
         except Exception as e:
             logger.error(f"Evaluation failed: {str(e)}", context="Evaluator.evaluate")
             raise
 
 if __name__ == "__main__":
     evaluator = Evaluator("gpt2")
-    evaluator.evaluate("Hello, how are you?", INFERENCE)
+    evaluator.evaluate("Hello, how am I?", INFERENCE)
